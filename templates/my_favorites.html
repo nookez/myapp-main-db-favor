@@ -1,0 +1,60 @@
+{% extends '_base.html' %}
+{% load static %}
+
+{% block title %}My Favorites{% endblock %}
+
+{% block content %}
+<div class="p-4 mt-16"> 
+    <h2 class="text-2xl font-bold text-red-600 mb-4 text-center">My Favorites</h2> 
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {% for favorite in favorites %}
+        <div class="relative group">  
+            <div class="relative">
+                
+                <img src="{% static 'images/' %}{{favorite.movie.poster.url }}" alt="Favorite Movie {{ favorite.movie.title }}" class="w-full h-auto object-cover transition-transform duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-xl">
+        
+                <button class="remove-favorite-btn bg-red-600 text-white p-2 rounded absolute bottom-2 right-2" data-movie-id="{{ favorite.movie.id }}">
+                    Remove from Favorites
+                </button>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-gray-500 text-center">No favorites added yet.</p> 
+        {% endfor %}
+    </div>
+</div>
+{% endblock content %}
+
+{% block script %}
+<script>
+    const removeFavoriteButtons = document.querySelectorAll('.remove-favorite-btn');
+    removeFavoriteButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            const movieId = this.getAttribute('data-movie-id');
+
+            fetch('/remove_favorite/', { // เปลี่ยน URL ตาม route ของคุณ
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}' // ใช้ CSRF token
+                },
+                body: JSON.stringify({ movie_id: movieId }) // ส่ง ID ของหนัง
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // ลบองค์ประกอบหนังออกจาก DOM
+                    this.closest('.group').remove();
+                    alert('Removed from favorites!'); // แจ้งผลสำเร็จ
+                } else {
+                    alert('Failed to remove from favorites.'); // แจ้งข้อผิดพลาด
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred.'); // แจ้งข้อผิดพลาด
+            });
+        });
+    });
+</script>
+{% endblock script %}

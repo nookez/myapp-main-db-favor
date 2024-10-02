@@ -1,0 +1,114 @@
+{% extends '_base.html' %}
+{% load static %}
+{% block title %}NETNOOK{% endblock %}
+
+{% block extra_head %}
+{% endblock %}
+
+{% block content %}
+<div class="p-0 m-0">
+    <section class="relative min-h-screen w-full flex items-center justify-center">
+        <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-80 z-10"></div>
+        <div class="relative w-full h-full text-center z-20">
+            <div class="relative w-full h-full">
+                <img id="slideImage" class="w-full h-full object-cover" src="{% static 'slideimg/blackpanther2.png' %}" alt="Slide Image" style="max-height: 100vh;">
+            </div>
+            <button id="prevSlide" class="absolute top-1/2 left-4 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-4 rounded-full hover:bg-opacity-75 transition duration-300 ease-in-out shadow-lg hover:shadow-xl flex items-center justify-center z-30">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+
+            <button id="nextSlide" class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-4 rounded-full hover:bg-opacity-75 transition duration-300 ease-in-out shadow-lg hover:shadow-xl flex items-center justify-center z-30">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+        </div>
+    </section>
+
+    <div class="mb-8 p-4">
+        <h2 class="text-2xl font-bold text-red-600 mb-4">
+            Top pick <span class="text-white">TV shows and movies just for you</span>
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {% for i in "123456" %}
+            <div class="relative group">
+                <a href="{% url 'toppick' i %}" class="block">
+                    <img src="{% static 'images/POSTER'|add:i|add:'.png' %}" alt="Movie {{ i }}" class="w-3/4 h-auto mx-auto object-cover transition-transform duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-xl group-hover:ring-4 group-hover:ring-red-500">
+                </a>
+                <!-- ปุ่มเพิ่มหนังที่ชอบ -->
+                <button class="favorite-btn bg-red-600 text-white p-2 rounded mt-2" data-movie-id="{{ i }}">
+                    Add to Favorites
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block script %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const slideImage = document.getElementById('slideImage');
+        const favoriteButtons = document.querySelectorAll('.favorite-btn');
+
+        favoriteButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const movieId = this.getAttribute('data-movie-id');
+
+                // ส่งข้อมูลไปยัง Django view โดยใช้ fetch API
+                fetch('/add_favorite/', { // เปลี่ยน URL ตาม route ของคุณ
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}' // ใช้ CSRF token
+                    },
+                    body: JSON.stringify({ movie_id: movieId }) // ส่ง ID ของหนัง
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Added to favorites!'); // แจ้งผลสำเร็จ
+                    } else {
+                        alert('Failed to add to favorites.'); // แจ้งข้อผิดพลาด
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred.'); // แจ้งข้อผิดพลาด
+                });
+            });
+        });
+
+        const imagePaths = [
+            "{% static 'slideimg/blackpanther2.png' %}",
+            "{% static 'slideimg/titanic3.png' %}",
+            "{% static 'slideimg/moonfall2.png' %}",
+            "{% static 'slideimg/green2.png' %}"
+        ];
+        
+        let currentIndex = 0;
+
+        function updateImage() {
+            slideImage.style.transition = 'opacity 0.5s ease-in-out';
+            slideImage.style.opacity = 0; 
+            setTimeout(() => {
+                slideImage.src = imagePaths[currentIndex];
+                slideImage.style.opacity = 1; 
+            }, 500);
+        }
+
+        document.getElementById('nextSlide').addEventListener('click', function () {
+            currentIndex = (currentIndex + 1) % imagePaths.length; 
+            updateImage();
+        });
+
+        document.getElementById('prevSlide').addEventListener('click', function () {
+            currentIndex = (currentIndex - 1 + imagePaths.length) % imagePaths.length; 
+            updateImage();
+        });
+    });
+</script>
+{% endblock script %}
